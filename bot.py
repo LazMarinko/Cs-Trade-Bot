@@ -6,97 +6,103 @@ from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import time
 import random
-
+from trade_checker import TradeChecker  # Import TradeChecker
 
 class TradeBot:
-    def __init__(self):
+    def __init__(self, item_number):
+        """
+        Initializes TradeBot with Chrome WebDriver and stores the selected item number.
+        """
         options = webdriver.ChromeOptions()
         options.add_argument(
-            r"--user-data-dir=C:\Users\dragan\AppData\Local\Google\Chrome\User Data")  # Corrected user data path
-        options.add_argument(r"--profile-directory=Profile 1")  # Corrected profile name
+            r"--user-data-dir=C:\Users\dragan\AppData\Local\Google\Chrome\User Data")
+        options.add_argument(r"--profile-directory=Profile 1")
 
         self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         self.forum_url = "https://steamcommunity.com/app/730/tradingforum/"
-        self.clicked_posts = set()  # Store already clicked posts
+        self.clicked_posts = set()
+        self.item_number = item_number  # Store selected item number
 
     def open_forum(self):
         """Opens the CS2 trade forum."""
         self.driver.get(self.forum_url)
-        time.sleep(random.uniform(1, 3))  # Increased wait time for elements to fully load
+        time.sleep(random.uniform(1, 3))
 
     def get_valid_elements(self):
-        """Waits for elements to fully load and retrieves valid post IDs, skipping pinned posts."""
-        time.sleep(random.uniform(2, 4))  # Ensure the page fully loads
+        """Finds trade posts, skipping pinned ones."""
+        time.sleep(random.uniform(2, 4))
         soup = BeautifulSoup(self.driver.page_source, 'html.parser')
         container = soup.select_one('#forum_Trading_3381077_18446744073709551615_topiccontainer')
-        print("Container found:" if container else "Container not found.")
 
         if container:
             elements = container.find_all('div', id=lambda x: x and x.startswith(
                 'forum_Trading_3381077_18446744073709551615_'))
-            elements = elements[4:19]  # Skip first 3 pinned posts and limit to 16
+            elements = elements[4:19]  # Skip first 3 pinned posts, limit to 16
             return [element.get('id') for element in elements]
-        else:
-            print("Container not found.")
-            return []
+        return []
 
     def click_random_element(self):
-        """Randomly selects and clicks an element inside the container, avoiding duplicates."""
+        """Selects and clicks a random trade post, avoiding duplicates."""
         post_ids = self.get_valid_elements()
-        random.shuffle(post_ids)  # Shuffle to make selection more human-like
+        random.shuffle(post_ids)
 
         while post_ids:
-            post_id = post_ids.pop()  # Select and remove a random post
+            post_id = post_ids.pop()
 
             if post_id in self.clicked_posts:
-                continue  # Skip if already clicked
+                continue  # Skip already clicked posts
 
             try:
                 post = self.driver.find_element(By.ID, post_id)
                 self.driver.execute_script("arguments[0].scrollIntoView();", post)
                 time.sleep(random.uniform(1, 3))
                 post.click()
-                time.sleep(random.uniform(2, 4))  # Random delay for human-like behavior
+                time.sleep(random.uniform(2, 4))
 
-                self.clicked_posts.add(post_id)  # Mark post as clicked
+                self.clicked_posts.add(post_id)  # Mark as clicked
 
-                # Check if CS2 is selected in #appselect_activeapp
+                # Ensure CS2 is selected
                 try:
                     active_app = self.driver.find_element(By.ID, 'appselect_activeapp')
                     if 'Counter-Strike 2' not in active_app.text:
                         active_app.click()
-                        time.sleep(random.uniform(1, 3))  # Allow dropdown to appear
+                        time.sleep(random.uniform(1, 3))
                         cs2_option = self.driver.find_element(By.XPATH, "//div[contains(text(), 'Counter-Strike 2')]")
                         cs2_option.click()
-                        time.sleep(random.uniform(2, 4))  # Allow selection to process
+                        time.sleep(random.uniform(2, 4))
                 except Exception as e:
-                    print(f"Error checking or selecting CS2: {e}")
+                    print(f"Error checking/selecting CS2: {e}")
 
-                # Click the trade offer button if available
+                # Click the trade offer button
                 try:
                     trade_offer_button = self.driver.find_element(By.CSS_SELECTOR,
-                                                                  '#AppHubContent > div > div.leftcol > div.forum_topic_tradeoffer_area.forum_formarea_box > div.forum_topic_tradeoffer_button_ctn > a')
+                        '#AppHubContent > div > div.leftcol > div.forum_topic_tradeoffer_area.forum_formarea_box > div.forum_topic_tradeoffer_button_ctn > a')
                     trade_offer_button.click()
-                    time.sleep(random.uniform(2, 4))  # Allow time for the trade page to load
+                    time.sleep(random.uniform(2, 4))
 
                     # Switch to the new trade offer tab
                     self.driver.switch_to.window(self.driver.window_handles[-1])
-                    time.sleep(random.uniform(2, 4))  # Allow time for the trade page to load completely
+                    time.sleep(random.uniform(2, 4))
 
-                    # Ensure the trade offer page is fully loaded before checking for the container
+                    # Ensure trade offer page is loaded before checking for the container
                     time.sleep(random.uniform(2, 4))
                     try:
                         trade_container = self.driver.find_element(By.CSS_SELECTOR, '#appselect_activeapp')
                         print("Trade container found.")
                     except Exception:
                         print("Trade container not found.")
-                except Exception:
-                    print(f"No trade offer button found for post {post_id}")
+
+                    # **Run TradeChecker on the selected item**
+                    trade_checker = TradeChecker(self.driver, self.item_number)  # Pass driver and item number
+                    trade_checker.run()  # Execute TradeChecker logic
+
+                except Exception as e:
+                    print(f"No trade offer button found for post {post_id}: {e}")
 
                 self.driver.back()
-                time.sleep(random.uniform(2, 5))  # Random back delay
-                post_ids = self.get_valid_elements()  # Refresh elements list after navigating back
-                random.shuffle(post_ids)  # Shuffle again for variation
+                time.sleep(random.uniform(2, 5))
+                post_ids = self.get_valid_elements()
+                random.shuffle(post_ids)
             except Exception as e:
                 print(f"Error clicking post {post_id}: {e}")
                 continue
