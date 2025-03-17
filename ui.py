@@ -30,6 +30,9 @@ class ItemSelectorUi(ctk.CTk):
         self.load_items_thread = threading.Thread(target=self.load_items, daemon=True)
         self.load_items_thread.start()
 
+        # **Handle UI Closing Properly**
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
+
     def load_items(self):
         """Runs the inventory scraper and updates the combo box when finished."""
         tradeable_items = get_inventory_items()  # Get tradeable items from scraper
@@ -40,19 +43,24 @@ class ItemSelectorUi(ctk.CTk):
             item_list = [f"{item['Item: ']} ({item['Exterior']})" for item in tradeable_items]
 
         # **Update the ComboBox with new items**
-        self.items.configure(values=item_list)
-        self.selected_item.set(item_list[0])  # Select the first item automatically
-
-        # **Enable the button once loading is complete**
-        self.button.configure(state="normal")
+        if self.winfo_exists():  # Ensure the UI still exists before updating
+            self.items.configure(values=item_list)
+            self.selected_item.set(item_list[0])  # Select the first item automatically
+            self.button.configure(state="normal")  # Enable the button after loading
 
     def select_item(self):
-        """Save the selected item's index when the button is pressed and close the UI."""
+        """Save the selected item's index when the button is pressed and close UI."""
         all_items = self.items.cget("values")  # Get all items from the ComboBox
         selected_value = self.selected_item.get()  # Get the currently selected item
 
         if selected_value in all_items:
-            self.selected_index = all_items.index(selected_value) + 1  # Save the index (1-based)
+            self.selected_index = all_items.index(selected_value)  # Save the index
+            print(f"✅ Selected item index: {self.selected_index}")  # Debugging print
 
-        self.after(100, self.quit)  # Ensures clean closing of UI
+        self.destroy()  # Properly close the UI
 
+    def on_closing(self):
+        """Handle UI closing properly to avoid freezing."""
+        print("❌ UI is closing...")
+        self.quit()  # Ensures all loops stop running
+        self.destroy()  # Ensures all elements are closed

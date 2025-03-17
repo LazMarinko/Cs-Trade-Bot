@@ -8,28 +8,31 @@ class TradeChecker:
         Initializes TradeChecker with an existing WebDriver session.
         """
         self.driver = driver  # Use the already opened driver
-        self.item_index = item_index - 1  # Convert 1-based to 0-based index
+        self.item_index = item_index  # Use 1-based index for direct XPath selection
 
     def find_item_price(self):
         """Finds and prints the price of the selected trade item."""
         try:
             wait = WebDriverWait(self.driver, 10)
 
-            # **Wait for the inventory container to load**
+            # **Ensure the inventory container is loaded**
             inventory_container = wait.until(
-                EC.presence_of_element_located((By.XPATH, "//div[contains(@id, 'inventory_')]"))
+                EC.presence_of_element_located(
+                    (By.XPATH, "/html/body/div[1]/div[5]/div[3]/div[1]/div[3]/div[1]/div[1]/div[2]/div[6]")
+                )
             )
+            print("✅ Inventory container found.")
 
-            # **Find all item divs inside the inventory container**
-            items = inventory_container.find_elements(By.XPATH, "./div[contains(@id, '730_2')]")
+            # **Construct XPath for the specific item**
+            item_xpath = f"/html/body/div[1]/div[5]/div[3]/div[1]/div[3]/div[1]/div[1]/div[2]/div[6]/div[7]/div[1]/div[{self.item_index}]/div"
 
-            if self.item_index >= len(items):
-                print(f"❌ Error: Selected item index {self.item_index + 1} is out of range.")
-                return
+            # **Locate the selected item**
+            selected_item = wait.until(
+                EC.presence_of_element_located((By.XPATH, item_xpath))
+            )
+            print(f"🔍 Found selected item at index {self.item_index}.")
 
-            selected_item = items[self.item_index]  # **Select the correct Nth item**
-
-            # **Find the price indicator within the selected item**
+            # **Find price indicator inside the selected item**
             try:
                 price_element = selected_item.find_element(By.XPATH, ".//div[contains(@class, 'priceIndicator')]")
                 price = price_element.text.strip()
@@ -42,4 +45,5 @@ class TradeChecker:
 
     def run(self):
         """Runs the price checking process."""
+        print("🔍 Running price check for selected item...")
         self.find_item_price()
