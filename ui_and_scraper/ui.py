@@ -1,6 +1,6 @@
 import customtkinter as ctk
 import threading
-from inv_scraper import get_inventory_items
+from ui_and_scraper.inv_scraper import get_inventory_items
 
 class ItemSelectorUi(ctk.CTk):
     def __init__(self):

@@ -1,0 +1,28 @@
+import requests
+
+
+class DiscordWebhook:
+    def __init__(self, current_url):
+        self.webhook_url = "https://discord.com/api/webhooks/1352248237863600139/AwaW8d884SqAytx-LREq_VVBHrTDMRcDfOEM24yVbEhHkAROUtaDa3qBRoD5WjfRAyxe"
+        self.message = "Profitable trade found.\nUrl for trade:" + current_url
+        self.image_path = "cropped_image.png"
+        self.current_url = current_url
+
+    def send_message(self, webhook_url, message, image_path):
+        with open(image_path, "rb") as image_file:
+            files = {
+                'file': (image_path, image_file)
+            }
+
+            data = {
+                "content": message,
+                "flags": 4
+            }
+            response = requests.post(webhook_url, data=data, files=files)
+        if response.status_code == 204:
+            print("Image sent succsefully")
+        else:
+            print("Failed to send image")
+
+    def run(self):
+        self.send_message(self.webhook_url, self.message, self.image_path)

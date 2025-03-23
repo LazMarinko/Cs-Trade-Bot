@@ -2,8 +2,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
-import re
-from trade_algorithm import TradeAlgorithm
+from bot_browser_control.trade_algorithm import TradeAlgorithm
 
 
 class TradeChecker:
@@ -26,7 +25,8 @@ class TradeChecker:
             )
             print("✅ Inventory container found.")
 
-            # **Locate all item divs (to ensure they exist before selecting one)**
+            time.sleep(3)
+            # Now safely find all item divs within inventory_container
             item_divs = inventory_container.find_elements(By.XPATH, "./div[7]/div[1]/div")
             print(f"🔍 Found {len(item_divs)} total items in inventory.")
 

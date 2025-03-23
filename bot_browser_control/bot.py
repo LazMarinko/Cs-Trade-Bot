@@ -1,12 +1,11 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import time
 import random
-from trade_checker import TradeChecker  # Import TradeChecker
+from bot_browser_control.trade_checker import TradeChecker  # Import TradeChecker
 
 class TradeBot:
     def __init__(self, item_number):
@@ -17,6 +16,7 @@ class TradeBot:
         options.add_argument(
             r"--user-data-dir=C:\Users\dragan\AppData\Local\Google\Chrome\User Data")
         options.add_argument(r"--profile-directory=Profile 1")
+        #options.add_argument("--headless")
 
         self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         self.forum_url = "https://steamcommunity.com/app/730/tradingforum/"
@@ -61,28 +61,27 @@ class TradeBot:
 
                 self.clicked_posts.add(post_id)  # Mark as clicked
 
-                # Ensure CS2 is selected
+                time.sleep(4)
                 try:
-                    active_app = self.driver.find_element(By.ID, 'appselect_activeapp')
-                    if 'Counter-Strike 2' not in active_app.text:
-                        active_app.click()
-                        time.sleep(random.uniform(1, 3))
-                        cs2_option = self.driver.find_element(By.XPATH, "//div[contains(text(), 'Counter-Strike 2')]")
-                        cs2_option.click()
-                        time.sleep(random.uniform(2, 4))
-                except Exception as e:
-                    print(f"Error checking/selecting CS2: {e}")
-
-                # Click the trade offer button
-                try:
-                    trade_offer_button = self.driver.find_element(By.CSS_SELECTOR,
-                        '#AppHubContent > div > div.leftcol > div.forum_topic_tradeoffer_area.forum_formarea_box > div.forum_topic_tradeoffer_button_ctn > a')
+                    trade_offer_button = self.driver.find_element(By.XPATH,
+                        '//*[@id="AppHubContent"]/div/div[1]/div[3]/div[1]/a')
                     trade_offer_button.click()
                     time.sleep(random.uniform(2, 4))
 
                     # Switch to the new trade offer tab
                     self.driver.switch_to.window(self.driver.window_handles[-1])
                     time.sleep(random.uniform(2, 4))
+                    try:
+                        active_app = self.driver.find_element(By.ID, 'appselect_activeapp')
+                        if 'Counter-Strike 2' not in active_app.text:
+                            active_app.click()
+                            time.sleep(random.uniform(1, 3))
+                            cs2_option = self.driver.find_element(By.XPATH,
+                                                                  "//div[contains(text(), 'Counter-Strike 2')]")
+                            cs2_option.click()
+                            time.sleep(random.uniform(2, 4))
+                    except Exception as e:
+                        print(f"Error checking/selecting CS2: {e}")
 
                     # Ensure trade offer page is loaded before checking for the container
                     time.sleep(random.uniform(2, 4))
@@ -96,9 +95,12 @@ class TradeBot:
                     trade_checker = TradeChecker(self.driver, self.item_number)  # Pass driver and item number
                     trade_checker.run()  # Execute TradeChecker logic
 
+                    self.driver.close()
+                    self.driver.switch_to.window(self.driver.window_handles[0])
+
                 except Exception as e:
                     print(f"No trade offer button found for post {post_id}: {e}")
-
+                # Ensure CS2 is selected
                 self.driver.back()
                 time.sleep(random.uniform(2, 5))
                 post_ids = self.get_valid_elements()
@@ -108,7 +110,7 @@ class TradeBot:
                 continue
 
     def run(self):
-        """Runs the bot."""
+        """Runs the test_1."""
         self.open_forum()
         self.click_random_element()
         self.driver.quit()
