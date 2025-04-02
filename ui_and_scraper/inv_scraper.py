@@ -9,8 +9,7 @@ def get_inventory_items():
     options = webdriver.ChromeOptions()
     options.add_argument(r"--user-data-dir=C:\Users\dragan\AppData\Local\Google\Chrome\User Data")
     options.add_argument(r"--profile-directory=Profile 1")
-    options.add_argument("--headless")
-    # options.add_argument("--disable-gpu")
+    options.add_argument("--headless=new")
 
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     inventory_url = "https://steamcommunity.com/profiles/76561198264077039/inventory#730"

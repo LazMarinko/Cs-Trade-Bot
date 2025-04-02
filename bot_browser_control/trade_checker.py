@@ -28,6 +28,10 @@ class TradeChecker:
             time.sleep(3)
             # Now safely find all item divs within inventory_container
             item_divs = inventory_container.find_elements(By.XPATH, "./div[7]/div[1]/div")
+            if item_divs is None:
+                while item_divs is None:
+                    item_divs = inventory_container.find_elements(By.XPATH, "./div[7]/div[1]/div")
+                    time.sleep(1)
             print(f"🔍 Found {len(item_divs)} total items in inventory.")
 
             if not item_divs:

@@ -17,6 +17,7 @@ class TradeBot:
             r"--user-data-dir=C:\Users\dragan\AppData\Local\Google\Chrome\User Data")
         options.add_argument(r"--profile-directory=Profile 1")
         #options.add_argument("--headless")
+        #options.add_argument("--start-maximized")
 
         self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         self.forum_url = "https://steamcommunity.com/app/730/tradingforum/"
@@ -54,7 +55,6 @@ class TradeBot:
 
             try:
                 post = self.driver.find_element(By.ID, post_id)
-                self.driver.execute_script("arguments[0].scrollIntoView();", post)
                 time.sleep(random.uniform(1, 3))
                 post.click()
                 time.sleep(random.uniform(2, 4))

@@ -5,13 +5,6 @@ import time
 import threading
 
 
-def run_bot():
-    while not close_ui.is_stopped:
-        bot = TradeBot(selected_index)
-        bot.run()
-        time.sleep(30)
-
-
 if __name__ == "__main__":
     try:
         ui = ItemSelectorUi()
@@ -21,7 +14,9 @@ if __name__ == "__main__":
         selected_index = ui.selected_index + 1
         print(f"Final selected item index: {selected_index}")  # Debugging print
 
-        close_ui = CloseUI(selected_index)
-        close_ui.mainloop()
+        time.sleep(2)
+        if selected_index is not None:
+            close_ui = CloseUI(selected_index)
+            close_ui.mainloop()
     except Exception as e:
         print(e)

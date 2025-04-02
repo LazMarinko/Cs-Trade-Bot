@@ -2,13 +2,14 @@ import customtkinter as ctk
 import threading
 import time
 from bot_browser_control.bot import TradeBot  # Adjust if needed
+import subprocess
 
 class CloseUI(ctk.CTk):
     def __init__(self, selected_index):
         super().__init__()
         self.is_stopped = False
         self.selected_index = selected_index
-        self.bot = TradeBot(self.selected_index)
+        self.bot = None
         # Suppress "invalid command name" errors caused by after() scripts post-destroy
         self.report_callback_exception = self._handle_callback_exception
 
@@ -27,17 +28,30 @@ class CloseUI(ctk.CTk):
 
     def stop(self):
         self.is_stopped = True
-        self.bot.driver.close()
         self.destroy()
+        return
 
     def start_bot(self):
         while True:
-            print("🔁 Running bot cycle...")
-            self.bot.run()
-            time.sleep(3600)  # Or however long you want between runs
-            if self.is_stopped:
-                break
+            try:
+                # 🔪 Kill all existing Chrome processes
+                try:
+                    subprocess.call("taskkill /F /IM chrome.exe /T", shell=True)
+                except Exception as e:
+                    print(e)
+                time.sleep(2)  # Give a moment for Chrome to shut down
 
+                print("🔁 Running bot cycle...")
+                self.bot = TradeBot(self.selected_index)
+                self.bot.run()
+                time.sleep(3600*3)  # Wait time between cycles
+                print("Timer done")
+
+                if self.is_stopped:
+                    break
+
+            except Exception as e:
+                print(f"❌ Exception during bot cycle: {e}")
     def _handle_callback_exception(self, exc, val, tb):
         # Suppress specific 'invalid command name' errors, print others
         if "invalid command name" in str(val):
