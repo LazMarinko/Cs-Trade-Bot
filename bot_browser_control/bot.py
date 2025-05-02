@@ -13,11 +13,10 @@ class TradeBot:
         Initializes TradeBot with Chrome WebDriver and stores the selected item number.
         """
         options = webdriver.ChromeOptions()
-        options.add_argument(
-            r"--user-data-dir=C:\Users\dragan\AppData\Local\Google\Chrome\User Data")
-        options.add_argument(r"--profile-directory=Profile 1")
-        #options.add_argument("--headless")
-        #options.add_argument("--start-maximized")
+        options.add_argument(r"--user-data-dir=C:\Temp\NewProfile")
+        options.add_argument(r"--profile-directory=Default")
+        # options.add_argument("--headless")
+        options.add_argument("--start-maximized")
 
         self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         self.forum_url = "https://steamcommunity.com/app/730/tradingforum/"

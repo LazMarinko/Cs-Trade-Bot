@@ -1,20 +1,23 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 
 def get_inventory_items():
-    """Extracts tradeable items from a user's Steam inventory and closes UI when done."""
+
+
     options = webdriver.ChromeOptions()
-    options.add_argument(r"--user-data-dir=C:\Users\dragan\AppData\Local\Google\Chrome\User Data")
-    options.add_argument(r"--profile-directory=Profile 1")
-    options.add_argument("--headless=new")
+    options.add_argument(r"--user-data-dir=C:\Temp\NewProfile")
+    options.add_argument(r"--profile-directory=Default")
+    options.add_experimental_option("detach", True)  # Optional: keep Chrome open after script ends
+    options.add_argument("--headless")
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    inventory_url = "https://steamcommunity.com/profiles/76561198264077039/inventory#730"
-    driver.get(inventory_url)
-
+    # Initialize driver
+    self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    print("cunt")
+    driver.get("https://steamcommunity.com/profiles/76561198264077039/inventory#730")
     time.sleep(5)
     tradeable_item_list = []
 

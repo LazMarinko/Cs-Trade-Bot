@@ -1,3 +1,5 @@
+import random
+
 import customtkinter as ctk
 import threading
 import time
@@ -44,7 +46,7 @@ class CloseUI(ctk.CTk):
                 print("🔁 Running bot cycle...")
                 self.bot = TradeBot(self.selected_index)
                 self.bot.run()
-                time.sleep(3600*3)  # Wait time between cycles
+                time.sleep(3600*random.uniform(0.75, 1.25))  # Wait time between cycles
                 print("Timer done")
 
                 if self.is_stopped:
