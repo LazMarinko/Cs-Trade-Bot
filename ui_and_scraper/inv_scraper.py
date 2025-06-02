@@ -2,23 +2,25 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import Select
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 
 def get_inventory_items():
-
 
     options = webdriver.ChromeOptions()
     options.add_argument(r"--user-data-dir=C:\Temp\NewProfile")
     options.add_argument(r"--profile-directory=Default")
     options.add_experimental_option("detach", True)  # Optional: keep Chrome open after script ends
     options.add_argument("--headless")
-
     # Initialize driver
-    self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    print("cunt")
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.get("https://steamcommunity.com/profiles/76561198264077039/inventory#730")
     time.sleep(5)
+
+    # Locate the dropdown and select the 3rd option
+    dropdown = Select(driver.find_element("css selector", "#sortingMethod"))
+    dropdown.select_by_index(2)
     tradeable_item_list = []
 
     try:

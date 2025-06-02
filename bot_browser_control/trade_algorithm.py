@@ -101,14 +101,15 @@ class TradeAlgorithm:
 
                         print(f"🧮 Trying combo {new_combo} with total {new_total:.2f}")
 
-                        if self.selected_item_price * 1.03 <= new_total <= self.selected_item_price * 1.05:
+                        if self.selected_item_price * 1.04 <= new_total <= self.selected_item_price * 1.07:
                             print(f"✅ Profit combo found: {new_combo} = {new_total:.2f}")
                             trade_confirmer = TradeConfirmer(self.item_index, new_combo, self.driver)
                             trade_confirmer.run()
                             trade_found = True
                             return
 
-                        elif new_total < self.selected_item_price * 1.03:
+                        elif new_total < self.selected_item_price * 1.04\
+                                :
                             try_combos(new_combo, new_total, depth + 1)
 
                         if trade_found:

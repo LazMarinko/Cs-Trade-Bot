@@ -15,7 +15,7 @@ class TradeBot:
         options = webdriver.ChromeOptions()
         options.add_argument(r"--user-data-dir=C:\Temp\NewProfile")
         options.add_argument(r"--profile-directory=Default")
-        # options.add_argument("--headless")
+        options.add_argument("--headless")
         options.add_argument("--start-maximized")
 
         self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
