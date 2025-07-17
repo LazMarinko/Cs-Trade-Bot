@@ -13,54 +13,47 @@ class TradeAlgorithm:
         self.item_index = item_index
         new_combo_price = 0
 
-    def find_price(self, item_index):
-        """Find the price of an item at the given index."""
-        try:
-            item_xpath = f"/html/body/div[1]/div[5]/div[3]/div[1]/div[3]/div[1]/div[1]/div[2]/div[6]/div[8]/div[1]/div[{item_index}]/div"
-            item_element = WebDriverWait(self.driver, 5).until(
-                EC.presence_of_element_located((By.XPATH, item_xpath))
-            )
-
-            price_element = item_element.find_element(By.XPATH, ".//div[contains(@class, 'priceIndicator')]")
-            price_text = price_element.text.strip().replace("€", "").replace("$", "").strip()
-            return float(price_text)
-
-        except Exception:
-            return None  # Return None if price not found
-
     def scan_inventory(self):
-        """Scans the entire other person's inventory, prints all item prices."""
+        """Scans the first 16 items in the other person's inventory and returns only suitable ones."""
         try:
-            # Wait for the inventory container to load
-            # Ensure inventory_container is located correctly before this code:
-            inventory_container = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//*[@id="inventories"]'))
-            )
+            # Locate the other person's inventory container
+            inventory_container = self.driver.find_element(By.CSS_SELECTOR, '#inventory_76561198264077039_730_2')
 
-            # Correct XPath relative to your previously found container
-            items = inventory_container.find_elements(By.XPATH, "./div[8]/div[1]/div")
-            print(f"Total items found: {len(items)}")
+            # Limit to first 16 items
+            item_divs = inventory_container.find_elements(By.CSS_SELECTOR, '.item')[:16]
 
-            index = 1
+            while not item_divs:
+                time.sleep(1)
+                item_divs = inventory_container.find_elements(By.CSS_SELECTOR, '.item')[:16]
+
+            print(f"🔍 Found {len(item_divs)} items in other person's inventory.")
+
             suitable_items = []
-            if items is not None:
-                while index < len(items) + 1:
-                    try:
-                        item_price = self.find_price(index)
+            for index, item_div in enumerate(item_divs):
+                try:
+                    price_element = item_div.find_element(By.CSS_SELECTOR, '.priceIndicator')
+                    price_text = price_element.text.strip()
 
-                        if item_price < self.selected_item_price and item_price > self.selected_item_price * 0.5:
-                            suitable_items.append((index, item_price))
+                    if not price_text:
+                        print(f"⚠️ Empty price at index {index + 1}. Skipping.\n"
+                              f"Price Text: {price_text}\n")
+                        continue
 
-                        index += 1
-                    except Exception as e:
-                        print(e)
-                        break
+                    price = float(price_text)
 
-            print("Suitable item indexes:", suitable_items)
+                    if self.selected_item_price * 0.5 < price < self.selected_item_price:
+                        suitable_items.append((index + 1, price))  # Use 1-based index
+                        print(f"✅ Suitable item at index {index + 1} with price: {price}")
+
+                except Exception:
+                    print(f"⚠️ Could not retrieve price at index {index + 1}. Skipping.")
+
+            print("✅ Filtered suitable items:", suitable_items)
             return suitable_items
 
         except Exception as e:
             print(f"❌ Error scanning other inventory: {e}")
+            return []
 
     def find_trade(self):
         """Find a trade with 3-5% profit using the fewest items possible."""

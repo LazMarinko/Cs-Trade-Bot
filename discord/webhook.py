@@ -3,9 +3,9 @@ import requests
 
 class DiscordWebhook:
     def __init__(self, current_url):
-        self.webhook_url = "https://discord.com/api/webhooks/1352248237863600139/AwaW8d884SqAytx-LREq_VVBHrTDMRcDfOEM24yVbEhHkAROUtaDa3qBRoD5WjfRAyxe"
+        self.webhook_url = "https://discordapp.com/api/webhooks/1380885814363422922/OGm9-UDXdzEsDGG5Xlsp-iERbC5OQXgB2jGDrcoVAnCsLQgPOq2UPjbnOrvIhoZ5uRhJ"
         self.message = "Profitable trade found.\nUrl for trade:" + current_url
-        self.image_path = "cropped_image.png"
+        self.image_path = "image.png"
         self.current_url = current_url
 
     def send_message(self, webhook_url, message, image_path):

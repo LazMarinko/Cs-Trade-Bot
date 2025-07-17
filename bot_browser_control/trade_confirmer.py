@@ -16,24 +16,11 @@ class TradeConfirmer:
     def take_screenshot(self):
         # Load the image
         self.driver.save_screenshot('image.png')
-        image_path = "image.png"  # Replace with your image path
-        image = Image.open(image_path)
 
-        # Define crop coordinates
-        top_left_x = 452
-        top_left_y = 6
-        width = 938
-        height = 914
-        bottom_right_x = top_left_x + width
-        bottom_right_y = top_left_y + height
-
-        # Crop the image
-        cropped_image = image.crop((top_left_x, top_left_y, bottom_right_x, bottom_right_y))
 
         current_url = self.get_url()
 
-        # Save the cropped image
-        cropped_image.save("cropped_image.png")
+        # Save the cropped imag
         webhook = DiscordWebhook(current_url)
         webhook.run()
         #cropped_image.show()

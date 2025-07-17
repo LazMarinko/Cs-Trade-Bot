@@ -12,7 +12,8 @@ def get_inventory_items():
     options.add_argument(r"--user-data-dir=C:\Temp\NewProfile")
     options.add_argument(r"--profile-directory=Default")
     options.add_experimental_option("detach", True)  # Optional: keep Chrome open after script ends
-    options.add_argument("--headless")
+    #options.add_argument("--headless")
+    options.add_argument("--start-maximized")
     # Initialize driver
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.get("https://steamcommunity.com/profiles/76561198264077039/inventory#730")
