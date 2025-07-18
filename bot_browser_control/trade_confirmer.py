@@ -12,6 +12,12 @@ class TradeConfirmer:
         self.item_index = item_index
         self.index_tuple = index_tuple
 
+    def find_all_inventories(self):
+        inventory_containers = self.driver.find_elements(By.CSS_SELECTOR, "div[id^='inventory_'][id$='730_2']")
+        inventory_container_id_list = []
+        for inventory_container in inventory_containers:
+            inventory_container_id_list.append(inventory_container.get_attribute('id'))
+        return inventory_container_id_list
 
     def take_screenshot(self):
         # Load the image
@@ -29,17 +35,17 @@ class TradeConfirmer:
         try:
             wait = WebDriverWait(self.driver, 15)
 
-            my_inventory_button = wait.until(
+            inventory_container_id_list = self.find_all_inventories()
+
+            user_inventory_button = wait.until(
                 EC.element_to_be_clickable(
                     (By.XPATH, '//*[@id="inventory_select_your_inventory"]'))
             )
-            my_inventory_button.click()
+            user_inventory_button.click()
 
-            my_item = wait.until(
-                EC.element_to_be_clickable(
-                    (By.XPATH, f'/html/body/div[1]/div[5]/div[3]/div[1]/div[3]/div[1]/div[1]/div[2]/div[6]/div[7]/div[1]/div[{self.item_index}]/div'))
-            )
-            my_item.click()
+            user_inventory = self.driver.find_element(By.CSS_SELECTOR, f"#{inventory_container_id_list[0]}")
+            user_items = user_inventory.find_elements(By.CSS_SELECTOR, '.item')[:16]
+            user_items[self.item_index - 1].click()
 
             other_inventory_button = wait.until(
                 EC.element_to_be_clickable(
@@ -47,11 +53,10 @@ class TradeConfirmer:
             )
             other_inventory_button.click()
 
+            other_inventory = self.driver.find_element(By.CSS_SELECTOR, f"#{inventory_container_id_list[1]}")
+            their_items = other_inventory.find_elements(By.CSS_SELECTOR, '.item')[:16]
             for index in self.index_tuple:
-                their_item = wait.until(
-                    EC.element_to_be_clickable(
-                        (By.XPATH, f"/html/body/div[1]/div[5]/div[3]/div[1]/div[3]/div[1]/div[1]/div[2]/div[6]/div[8]/div[1]/div[{index}]/div"))
-                )
+                their_item = their_items[index - 1]
                 their_item.click()
 
             time.sleep(1.5)

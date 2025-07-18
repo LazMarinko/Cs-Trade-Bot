@@ -14,21 +14,15 @@ class TradeChecker:
     def find_item_price(self):
         """Finds and prints the price of the selected trade item."""
         try:
-            wait = WebDriverWait(self.driver, 15)  # Increased timeout to 15 sec
-
-            # **Ensure the inventory container is loaded**
-            print("🔍 Waiting for inventory container...")
-            inventory_container = wait.until(
-                EC.presence_of_element_located(
-                    (By.XPATH, "/html/body/div[1]/div[5]/div[3]/div[1]/div[3]/div[1]/div[1]/div[2]/div[6]")
-                )
-            )
-            print("✅ Inventory container found.")
 
             time.sleep(3)
-            # Now safely find all item divs within inventory_container
-            # Step 1: Find your inventory container
-            inventory_container = self.driver.find_element(By.CSS_SELECTOR, '#inventory_76561198264077039_730_2')
+            inventory_containers = self.driver.find_elements(By.CSS_SELECTOR, "div[id^='inventory_'][id$='730_2']")
+            inventory_container_id = inventory_containers[0].get_attribute('id')
+
+            # Print the ID of the found inventory container for debugging purposes
+            print(f"✅ Found inventory container with ID: {inventory_container_id}")
+
+            inventory_container = self.driver.find_element(By.CSS_SELECTOR, f"#{inventory_container_id}")
             item_divs = inventory_container.find_elements(By.CSS_SELECTOR, '.item')[:16]
 
             while not item_divs:
