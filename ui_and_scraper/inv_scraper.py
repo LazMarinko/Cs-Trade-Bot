@@ -22,11 +22,13 @@ def get_inventory_items():
     # Locate the dropdown and select the 3rd option
     dropdown = Select(driver.find_element("css selector", "#sortingMethod"))
     dropdown.select_by_index(2)
+    print("print select index")
+    time.sleep(5)
     tradeable_item_list = []
 
     try:
-        inventory_container = driver.find_element(By.CSS_SELECTOR, "#inventory_76561198264077039_730_2 > div:nth-child(1)")
-        items = inventory_container.find_elements(By.CSS_SELECTOR, "a")
+        inventory_container = driver.find_element(By.CSS_SELECTOR, "#inventories")
+        items = inventory_container.find_elements(By.CSS_SELECTOR, ".item")
 
         tradeable_count = 0
         index = 0
@@ -82,7 +84,7 @@ def get_inventory_items():
 
                 # Extract trade restriction duration
                 try:
-                    trade_restriction_element = driver.find_element(By.CSS_SELECTOR, f"#inventory_76561198264077039_730_2 > div:nth-child(1) > div:nth-child({index + 1}) div.perItemDate.not_tradable")
+                    trade_restriction_element = item.find_element(By.CLASS_NAME, "provisional_item_badge")
                     trade_restriction = trade_restriction_element.text.strip()
                 except Exception:
                     trade_restriction = "No restriction"
@@ -97,11 +99,12 @@ def get_inventory_items():
                 index += 1
                 time.sleep(1)
 
-            except Exception:
+            except Exception as e:
                 index += 1
+                print(e)
 
-    except Exception:
-        pass
+    except Exception as e:
+        print(e)
 
     driver.quit()
     return tradeable_item_list
