@@ -2,6 +2,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bot_browser_control.trade_confirmer import TradeConfirmer
+from bot_browser_control.inventory_finder import inventory_finder
 import time
 
 
@@ -15,8 +16,9 @@ class TradeAlgorithm:
 
     def find_other_persons_items(self):
         """Find other persons inventory."""
-        inventory_containers = self.driver.find_elements(By.CSS_SELECTOR, "div[id^='inventory_'][id$='730_2']")
-        inventory_container_id = inventory_containers[1].get_attribute('id')
+        nonuser_inventory_index = 1
+        true_inventory_container = inventory_finder(self.driver, nonuser_inventory_index)
+        inventory_container_id = true_inventory_container.get_attribute('id')
 
         # Print the ID of the found inventory container for debugging purposes
         print(f"✅ Found inventory container with ID: {inventory_container_id}")

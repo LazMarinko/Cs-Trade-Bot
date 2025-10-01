@@ -3,6 +3,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 from bot_browser_control.trade_algorithm import TradeAlgorithm
+from bot_browser_control.inventory_finder import inventory_finder
 
 
 class TradeChecker:
@@ -15,31 +16,51 @@ class TradeChecker:
         """Finds and prints the price of the selected trade item."""
         try:
 
-            time.sleep(3)
-            inventory_containers = self.driver.find_elements(By.CSS_SELECTOR, "div[id^='inventory_'][id$='730_2']")
-            inventory_container_id = inventory_containers[0].get_attribute('id')
+            user_inventory_index = 0
+            true_inventory_container = inventory_finder(self.driver, user_inventory_index)
+
+            inventory_container_id = true_inventory_container.get_attribute('id')
 
             # Print the ID of the found inventory container for debugging purposes
             print(f"✅ Found inventory container with ID: {inventory_container_id}")
 
             inventory_container = self.driver.find_element(By.CSS_SELECTOR, f"#{inventory_container_id}")
-            item_divs = inventory_container.find_elements(By.CSS_SELECTOR, '.item')[:16]
+            # 1) Grab ALL items first (no slicing here)
+            item_divs = inventory_container.find_elements(
+                By.CSS_SELECTOR, ".item, .itemHolder, [id^='item730_']"
+            )
 
             while not item_divs:
                 time.sleep(1)
-                item_divs = inventory_container.find_elements(By.CSS_SELECTOR, '.item')
+                item_divs = inventory_container.find_elements(
+                    By.CSS_SELECTOR, ".item, .itemHolder, [id^='item730_']"
+                )
 
-            print(f"🔍 Found {len(item_divs)} total items in inventory.")
+            # 2) Deduplicate by priceIndicator text
+            unique_items = []
+            seen_prices = set()
 
-            for i, item in enumerate(item_divs):
+            for item in item_divs:
                 try:
                     price_div = item.find_element(By.CLASS_NAME, "priceIndicator")
-                    price = price_div.text.strip()
+                    price_text = price_div.text.strip()
                 except:
-                    price = "No price found"
-                print(f"Item {i + 1}: {price}")
+                    price_text = ""  # fallback if element is missing
 
-            print(f"🔍 Found {len(item_divs)} total items in inventory.")
+                if price_text not in seen_prices:
+                    seen_prices.add(price_text)
+                    unique_items.append(item)
+
+            # 3) Trim to your working limit
+            unique_items = unique_items[:16]
+            for item in unique_items:
+                i = 1
+                price_div = item.find_element(By.CLASS_NAME, "priceIndicator")
+                price_text = price_div.text.strip()
+                print(f"Item {i}: {price_text}")
+                i += 1
+
+            print(f"🔍 Found {len(unique_items)} unique items in inventory.")
 
             if not item_divs:
                 print("❌ No items found in inventory. Exiting.")
@@ -53,7 +74,7 @@ class TradeChecker:
 
             # **Find price indicator**
             try:
-                selected_item = item_divs[self.item_index - 1]
+                selected_item = unique_items[self.item_index - 1]
                 print(f"✅ Selected item at index {self.item_index}.")
 
                 # Try to find the price
@@ -78,7 +99,7 @@ class TradeChecker:
                     print("⚠️ Price indicator not found for selected item.")
 
             except IndexError:
-                print(f"❌ Invalid item index: {self.item_index}. Only {len(item_divs)} items found.")
+                print(f"❌ Invalid item index: {self.item_index}. Only {len(unique_items)} items found.")
         except Exception as e:
             print(f"❌ Error while selecting item: {e}")
 

@@ -13,7 +13,7 @@ class TradeConfirmer:
         self.index_tuple = index_tuple
 
     def find_all_inventories(self):
-        inventory_containers = self.driver.find_elements(By.CSS_SELECTOR, "div[id^='inventory_'][id$='730_2']")
+        inventory_containers = self.driver.find_elements(By.CSS_SELECTOR, "div[id^='inventory_'][id$='730_0']")
         inventory_container_id_list = []
         for inventory_container in inventory_containers:
             inventory_container_id_list.append(inventory_container.get_attribute('id'))
