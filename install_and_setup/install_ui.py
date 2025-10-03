@@ -1,6 +1,9 @@
 """Installation wizard UI for CS Trade Bot."""
-
+import os
+import sys
+import subprocess
 import customtkinter as ctk
+import tkinter.messagebox as messagebox
 from temp import run_initial_chrome_setup
 
 
@@ -13,6 +16,7 @@ class InstallWizard(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
 
+        self.start_chrome_button = None
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
@@ -200,12 +204,67 @@ class InstallWizard(ctk.CTk):
             self._current_step += 1
             self._show_current_step()
 
+    # --- replace your handler with this ---
     def _handle_launch_chrome(self) -> None:
-        """Placeholder for launching Chrome until wiring is implemented."""
-        run_initial_chrome_setup()
-        self.status_label.configure(
-            text="Step 2 of 2 · Chrome launch integration is not available yet."
-        )
+        """Kick off the external Chrome setup (temp.py) without blocking the UI."""
+        # Resolve temp.py path relative to this file
+        here = os.path.dirname(os.path.abspath(__file__))
+        temp_script = os.path.join(here, "temp.py")
+
+        if not os.path.exists(temp_script):
+            messagebox.showerror(
+                "Missing file",
+                f"Could not find temp.py at:\n{temp_script}\n\nMake sure it exists next to install_ui.py.",
+            )
+            return
+
+        # Update UI before launch
+        self.status_label.configure(text="Step 2 of 2 · Launching Chrome setup…")
+        # If you have a dedicated button attribute, disable it while running:
+        try:
+            self.start_chrome_button.configure(state="disabled")
+        except Exception:
+            pass
+
+        # Launch temp.py in a separate process (non-blocking)
+        try:
+            proc = subprocess.Popen(
+                [sys.executable, "-u", temp_script],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT,
+            )
+        except Exception as e:
+            messagebox.showerror("Failed to start Chrome setup", str(e))
+            try:
+                self.start_chrome_button.configure(state="normal")
+            except Exception:
+                pass
+            return
+
+        # Poll for completion without freezing the Tk loop
+        def _poll():
+            if proc.poll() is None:
+                # still running
+                self.after(500, _poll)
+            else:
+                # finished
+                try:
+                    self.start_chrome_button.configure(state="normal")
+                except Exception:
+                    pass
+                if proc.returncode == 0:
+                    self.status_label.configure(text="Chrome setup finished. You can continue.")
+                    # If you have a next step, trigger it here (optional):
+                    # self._advance_to_next_step()
+                else:
+                    self.status_label.configure(text="Chrome setup ended with an error. See logs if available.")
+                    messagebox.showwarning(
+                        "Chrome setup ended",
+                        "The Chrome setup process exited with a non-zero status.\n"
+                        "If this was intentional, you can continue. Otherwise, please rerun.",
+                    )
+
+        self.after(500, _poll)
 
 
 if __name__ == "__main__":
