@@ -1,6 +1,7 @@
 """Installation wizard UI for CS Trade Bot."""
 
 import customtkinter as ctk
+from temp import run_initial_chrome_setup
 
 
 class InstallWizard(ctk.CTk):
@@ -20,38 +21,78 @@ class InstallWizard(ctk.CTk):
         self.resizable(False, False)
 
         self._build_layout()
+        self._current_step = 0
+        self._show_current_step()
 
     def _build_layout(self) -> None:
-        """Create the static content shown on the first page of the wizard."""
+        """Create the static structure of the wizard window."""
 
-        outer_frame = ctk.CTkFrame(self, corner_radius=16)
-        outer_frame.pack(expand=True, fill="both", padx=24, pady=24)
+        self.outer_frame = ctk.CTkFrame(self, corner_radius=16)
+        self.outer_frame.pack(expand=True, fill="both", padx=24, pady=24)
 
-        header_frame = ctk.CTkFrame(outer_frame, fg_color="transparent")
-        header_frame.pack(fill="x", padx=18, pady=(18, 12))
+        self.header_frame = ctk.CTkFrame(self.outer_frame, fg_color="transparent")
+        self.header_frame.pack(fill="x", padx=18, pady=(18, 12))
 
-        title_label = ctk.CTkLabel(
-            header_frame,
-            text="Information about the installation",
+        self.title_label = ctk.CTkLabel(
+            self.header_frame,
+            text="Welcome to the CS Trade Bot Installer",
             font=("Segoe UI", 26, "bold"),
             anchor="w",
         )
-        title_label.pack(fill="x")
+        self.title_label.pack(fill="x")
 
-        subtitle_label = ctk.CTkLabel(
-            header_frame,
+        self.subtitle_label = ctk.CTkLabel(
+            self.header_frame,
             text=(
-                "Here is some useful information about the installation. "
-                "Make sure you follow the installation guide to ensure that the bot functions properly."
+                "This guided setup will prepare the automation bot that helps you browse "
+                "Counter-Strike 2 trade offers and pre-fills the offer window with your "
+                "selected inventory item."
             ),
             font=("Segoe UI", 15),
             wraplength=self.WINDOW_WIDTH - 120,
             justify="left",
         )
-        subtitle_label.pack(fill="x", pady=(12, 0))
+        self.subtitle_label.pack(fill="x", pady=(12, 0))
 
-        info_frame = ctk.CTkScrollableFrame(outer_frame, corner_radius=12)
-        info_frame.pack(expand=True, fill="both", padx=18, pady=12)
+        self.step_container = ctk.CTkFrame(self.outer_frame, corner_radius=12)
+        self.step_container.pack(expand=True, fill="both", padx=18, pady=12)
+
+        footer_frame = ctk.CTkFrame(self.outer_frame, fg_color="transparent")
+        footer_frame.pack(fill="x", padx=18, pady=(0, 18))
+
+        self.continue_button = ctk.CTkButton(
+            footer_frame,
+            text="Begin setup",
+            command=self._handle_continue,
+            height=42,
+            font=("Segoe UI", 16, "bold"),
+        )
+        self.continue_button.pack(side="right")
+
+        self.status_label = ctk.CTkLabel(
+            footer_frame,
+            text="Step 1 of 2 · Review the information above before continuing.",
+            font=("Segoe UI", 13),
+            anchor="w",
+        )
+        self.status_label.pack(side="left")
+
+    def _show_current_step(self) -> None:
+        """Render the frame for the current step index."""
+
+        for child in self.step_container.winfo_children():
+            child.destroy()
+
+        if self._current_step == 0:
+            self._show_welcome_step()
+        elif self._current_step == 1:
+            self._show_chrome_step()
+
+    def _show_welcome_step(self) -> None:
+        """Display the introductory information for the wizard."""
+
+        info_frame = ctk.CTkScrollableFrame(self.step_container, corner_radius=12, fg_color="transparent")
+        info_frame.pack(expand=True, fill="both")
 
         sections = (
             (
@@ -81,7 +122,6 @@ class InstallWizard(ctk.CTk):
             )
         )
 
-
         for heading, body in sections:
             section_frame = ctk.CTkFrame(info_frame, corner_radius=10)
             section_frame.pack(fill="x", expand=False, padx=6, pady=(0, 12))
@@ -104,30 +144,68 @@ class InstallWizard(ctk.CTk):
             )
             body_label.pack(fill="x", padx=16, pady=(0, 16))
 
-        footer_frame = ctk.CTkFrame(outer_frame, fg_color="transparent")
-        footer_frame.pack(fill="x", padx=18, pady=(0, 18))
-
-        continue_button = ctk.CTkButton(
-            footer_frame,
-            text="Begin setup",
-            command=self._handle_continue,
-            height=42,
-            font=("Segoe UI", 16, "bold"),
+        self.continue_button.configure(text="Begin setup", state="normal")
+        self.status_label.configure(
+            text="Step 1 of 2 · Review the information above before continuing."
         )
-        continue_button.pack(side="right")
 
-        self.status_label = ctk.CTkLabel(
-            footer_frame,
-            text="Step 1 of 1 · Review the information above before continuing.",
-            font=("Segoe UI", 13),
+    def _show_chrome_step(self) -> None:
+        """Display Chrome setup guidance and placeholder controls."""
+
+        chrome_frame = ctk.CTkFrame(self.step_container, corner_radius=12)
+        chrome_frame.pack(expand=True, fill="both", padx=6, pady=6)
+
+        heading_label = ctk.CTkLabel(
+            chrome_frame,
+            text="Step 2 · Prepare Google Chrome",
+            font=("Segoe UI", 22, "bold"),
             anchor="w",
         )
-        self.status_label.pack(side="left")
+        heading_label.pack(fill="x", padx=24, pady=(24, 12))
+
+        body_text = (
+            "Here’s what you need to do to set up Chrome for use with this bot. "
+            "First, log in to your Steam profile — the button below will take you directly to the Steam login page. "
+            "After logging in, make sure to install the CS2 Trader extension "
+            "and set it up as explained in the installation video guide."
+        )
+
+        body_label = ctk.CTkLabel(
+            chrome_frame,
+            text=body_text,
+            font=("Segoe UI", 15),
+            justify="left",
+            wraplength=self.WINDOW_WIDTH - 140,
+        )
+        body_label.pack(fill="x", padx=24)
+
+        chrome_button = ctk.CTkButton(
+            chrome_frame,
+            text="Launch Chrome",
+            height=42,
+            font=("Segoe UI", 16, "bold"),
+            command=self._handle_launch_chrome,
+        )
+        chrome_button.pack(padx=24, pady=(32, 12), anchor="w")
+
+        self.continue_button.configure(text="Finish", state="disabled")
+        self.status_label.configure(
+            text="Step 2 of 2 · Chrome launch automation will be added shortly."
+        )
 
     def _handle_continue(self) -> None:
-        """Placeholder handler until subsequent setup pages are implemented."""
+        """Advance the wizard to the next step."""
 
-        self.status_label.configure(text="Coming soon: additional setup steps.")
+        if self._current_step < 1:
+            self._current_step += 1
+            self._show_current_step()
+
+    def _handle_launch_chrome(self) -> None:
+        """Placeholder for launching Chrome until wiring is implemented."""
+        run_initial_chrome_setup()
+        self.status_label.configure(
+            text="Step 2 of 2 · Chrome launch integration is not available yet."
+        )
 
 
 if __name__ == "__main__":
