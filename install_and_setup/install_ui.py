@@ -24,11 +24,11 @@ class InstallWizard(ctk.CTk):
         self.geometry(f"{self.WINDOW_WIDTH}x{self.WINDOW_HEIGHT}")
         self.resizable(False, False)
 
-        self._build_layout()
+        self.build_layout()
         self._current_step = 0
-        self._show_current_step()
+        self.show_current_step()
 
-    def _build_layout(self) -> None:
+    def build_layout(self) -> None:
         """Create the static structure of the wizard window."""
 
         self.outer_frame = ctk.CTkFrame(self, corner_radius=16)
@@ -67,7 +67,7 @@ class InstallWizard(ctk.CTk):
         self.continue_button = ctk.CTkButton(
             footer_frame,
             text="Begin setup",
-            command=self._handle_continue,
+            command=self.handle_continue,
             height=42,
             font=("Segoe UI", 16, "bold"),
         )
@@ -81,18 +81,18 @@ class InstallWizard(ctk.CTk):
         )
         self.status_label.pack(side="left")
 
-    def _show_current_step(self) -> None:
+    def show_current_step(self) -> None:
         """Render the frame for the current step index."""
 
         for child in self.step_container.winfo_children():
             child.destroy()
 
         if self._current_step == 0:
-            self._show_welcome_step()
+            self.show_welcome_step()
         elif self._current_step == 1:
-            self._show_chrome_step()
+            self.show_chrome_step()
 
-    def _show_welcome_step(self) -> None:
+    def show_welcome_step(self) -> None:
         """Display the introductory information for the wizard."""
 
         info_frame = ctk.CTkScrollableFrame(self.step_container, corner_radius=12, fg_color="transparent")
@@ -153,7 +153,7 @@ class InstallWizard(ctk.CTk):
             text="Step 1 of 2 · Review the information above before continuing."
         )
 
-    def _show_chrome_step(self) -> None:
+    def show_chrome_step(self) -> None:
         """Display Chrome setup guidance and placeholder controls."""
 
         chrome_frame = ctk.CTkFrame(self.step_container, corner_radius=12)
@@ -188,7 +188,7 @@ class InstallWizard(ctk.CTk):
             text="Launch Chrome",
             height=42,
             font=("Segoe UI", 16, "bold"),
-            command=self._handle_launch_chrome,
+            command=self.handle_launch_chrome,
         )
         chrome_button.pack(padx=24, pady=(32, 12), anchor="w")
 
@@ -197,15 +197,15 @@ class InstallWizard(ctk.CTk):
             text="Step 2 of 2 · Chrome launch automation will be added shortly."
         )
 
-    def _handle_continue(self) -> None:
+    def handle_continue(self) -> None:
         """Advance the wizard to the next step."""
 
         if self._current_step < 1:
             self._current_step += 1
-            self._show_current_step()
+            self.show_current_step()
 
     # --- replace your handler with this ---
-    def _handle_launch_chrome(self) -> None:
+    def handle_launch_chrome(self) -> None:
         """Kick off the external Chrome setup (temp.py) without blocking the UI."""
         # Resolve temp.py path relative to this file
         here = os.path.dirname(os.path.abspath(__file__))
