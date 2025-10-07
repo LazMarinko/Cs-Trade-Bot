@@ -1,5 +1,6 @@
 """Installation wizard UI for CS Trade Bot."""
 import os
+import json
 import sys
 import subprocess
 import customtkinter as ctk
@@ -25,7 +26,7 @@ class InstallWizard(ctk.CTk):
         self.resizable(False, False)
 
         self.build_layout()
-        self._current_step = 0
+        self.current_step = 0
         self.show_current_step()
 
     def build_layout(self) -> None:
@@ -75,7 +76,7 @@ class InstallWizard(ctk.CTk):
 
         self.status_label = ctk.CTkLabel(
             footer_frame,
-            text="Step 1 of 2 · Review the information above before continuing.",
+            text="Step 1 of 4 · Review the information above before continuing.",
             font=("Segoe UI", 13),
             anchor="w",
         )
@@ -87,10 +88,12 @@ class InstallWizard(ctk.CTk):
         for child in self.step_container.winfo_children():
             child.destroy()
 
-        if self._current_step == 0:
+        if self.current_step == 0:
             self.show_welcome_step()
-        elif self._current_step == 1:
+        elif self.current_step == 1:
             self.show_chrome_step()
+        elif self.current_step == 2:
+            self.show_user_input_step()
 
     def show_welcome_step(self) -> None:
         """Display the introductory information for the wizard."""
@@ -150,7 +153,7 @@ class InstallWizard(ctk.CTk):
 
         self.continue_button.configure(text="Begin setup", state="normal")
         self.status_label.configure(
-            text="Step 1 of 2 · Review the information above before continuing."
+            text="Step 1 of 4 · Review the information above before continuing."
         )
 
     def show_chrome_step(self) -> None:
@@ -192,16 +195,16 @@ class InstallWizard(ctk.CTk):
         )
         chrome_button.pack(padx=24, pady=(32, 12), anchor="w")
 
-        self.continue_button.configure(text="Finish", state="disabled")
+        self.continue_button.configure(text="Next step")
         self.status_label.configure(
-            text="Step 2 of 2 · Chrome launch automation will be added shortly."
+            text="Step 2 of 4 · Setup Chrome browser for the bot."
         )
 
     def handle_continue(self) -> None:
         """Advance the wizard to the next step."""
 
-        if self._current_step < 1:
-            self._current_step += 1
+        if self.current_step < 2:
+            self.current_step += 1
             self.show_current_step()
 
     # --- replace your handler with this ---
@@ -219,7 +222,7 @@ class InstallWizard(ctk.CTk):
             return
 
         # Update UI before launch
-        self.status_label.configure(text="Step 2 of 2 · Launching Chrome setup…")
+        self.status_label.configure(text="Step 2 of 4 · Launching Chrome setup…")
         # If you have a dedicated button attribute, disable it while running:
         try:
             self.start_chrome_button.configure(state="disabled")
@@ -265,6 +268,110 @@ class InstallWizard(ctk.CTk):
                     )
 
         self.after(500, _poll)
+
+    def show_user_input_step(self) -> None:
+        user_input_frame = ctk.CTkFrame(self.step_container, corner_radius=12)
+        user_input_frame.pack(expand=True, fill="both", padx=6, pady=6)
+
+        user_input_heading = ctk.CTkLabel(
+            user_input_frame,
+            text="Step 3 · Inputting the required information",
+            font=("Segoe UI", 20, "bold"),
+            anchor="w",
+        )
+        user_input_heading.pack(fill="x", padx=20, pady=(16, 8))
+
+        # --- Steam & Discord input fields ---
+        input_container = ctk.CTkFrame(user_input_frame, corner_radius=8)
+        input_container.pack(fill="x", padx=20, pady=(0, 12))
+
+        inner_frame = ctk.CTkFrame(input_container, fg_color="transparent")
+        inner_frame.pack(fill="x", padx=16, pady=16)
+
+        # Steam Inventory Link
+        steam_label = ctk.CTkLabel(
+            inner_frame,
+            text="Steam Inventory Link:",
+            font=("Segoe UI", 14, "bold"),
+            anchor="w",
+        )
+        steam_label.pack(fill="x", pady=(0, 4))
+
+        steam_entry = ctk.CTkEntry(
+            inner_frame,
+            placeholder_text="https://steamcommunity.com/id/yourname/inventory",
+            height=32,
+            font=("Segoe UI", 13),
+        )
+        steam_entry.pack(fill="x", pady=(0, 10))
+
+        # Discord Webhook URL
+        webhook_label = ctk.CTkLabel(
+            inner_frame,
+            text="Discord Webhook URL:",
+            font=("Segoe UI", 14, "bold"),
+            anchor="w",
+        )
+        webhook_label.pack(fill="x", pady=(0, 4))
+
+        webhook_entry = ctk.CTkEntry(
+            inner_frame,
+            placeholder_text="https://discord.com/api/webhooks/...",
+            height=32,
+            font=("Segoe UI", 13),
+        )
+        webhook_entry.pack(fill="x")
+
+        # --- Save Information Button ---
+        button_frame = ctk.CTkFrame(user_input_frame, fg_color="transparent")
+        button_frame.pack(fill="x", pady=(8, 16), padx=20)
+
+        save_button = ctk.CTkButton(
+            button_frame,
+            text="Save Information",
+            width=160,
+            height=36,
+            font=("Segoe UI", 14, "bold"),
+            corner_radius=6,
+        )
+        save_button.pack(anchor="e")
+
+        def on_save():
+            steam_link = steam_entry.get().strip()
+            webhook_url = webhook_entry.get().strip()
+
+            # (Optional) very light validation
+            if not steam_link or not webhook_url or not steam_link.startswith("http") or not webhook_url.startswith(
+                    "http"):
+                self.status_label.configure(text="Please enter valid URLs for both fields.")
+                return
+
+            # Disable the button to prevent multiple clicks
+            save_button.configure(state="disabled")
+
+            # Write to config.json next to this file
+            try:
+                here = os.path.dirname(os.path.abspath(__file__))
+                cfg_path = os.path.join(here, "config.json")
+
+                data = {
+                    "steam_inventory_link": steam_link,
+                    "discord_webhook_url": webhook_url,
+                }
+
+                # ensure ASCII-safe + pretty, but compact enough
+                with open(cfg_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+
+                self.status_label.configure(text=f"Information saved to {os.path.basename(cfg_path)}.")
+            except Exception as e:
+                # Re-enable so the user can try again
+                save_button.configure(state="normal")
+                self.status_label.configure(text=f"Failed to save config: {e}")
+
+        save_button.configure(command=on_save)
+
+        self.status_label.configure(text="Step 3 of 4 · Input the required information")
 
 
 if __name__ == "__main__":
