@@ -1,37 +1,37 @@
-"""Installation wizard UI for CS Trade Bot."""
-import os
-import json
-import sys
-import subprocess
 import customtkinter as ctk
 import tkinter.messagebox as messagebox
-from temp import run_initial_chrome_setup
+from typing import Callable, Optional
+from install_and_setup.config import APP_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT
 
 
-class InstallWizard(ctk.CTk):
-    """First page of the installation wizard with bot information."""
+class InstallView(ctk.CTk):
+    """
+    Pure UI. Exposes callbacks; no business logic.
+    Controller calls `render_step(index)` to switch screens.
+    """
 
-    WINDOW_WIDTH = 780
-    WINDOW_HEIGHT = 560
+    # Controller-provided callbacks
+    on_continue: Optional[Callable[[], None]] = None
+    on_launch_chrome: Optional[Callable[[], None]] = None
+    on_save_info: Optional[Callable[[str, str], None]] = None
 
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
-
-        self.start_chrome_button = None
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
-        self.title("CS Trade Bot • Setup")
-        self.geometry(f"{self.WINDOW_WIDTH}x{self.WINDOW_HEIGHT}")
+        self.title(APP_TITLE)
+        self.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
         self.resizable(False, False)
 
-        self.build_layout()
-        self.current_step = 0
-        self.show_current_step()
+        self._start_chrome_button = None  # used to enable/disable
+        self._steam_entry = None
+        self._webhook_entry = None
 
-    def build_layout(self) -> None:
-        """Create the static structure of the wizard window."""
+        self._build_shell()
 
+    # ----- Shell (static chrome) -----
+    def _build_shell(self):
         self.outer_frame = ctk.CTkFrame(self, corner_radius=16)
         self.outer_frame.pack(expand=True, fill="both", padx=24, pady=24)
 
@@ -54,7 +54,7 @@ class InstallWizard(ctk.CTk):
                 "selected inventory item."
             ),
             font=("Segoe UI", 15),
-            wraplength=self.WINDOW_WIDTH - 120,
+            wraplength=WINDOW_WIDTH - 120,
             justify="left",
         )
         self.subtitle_label.pack(fill="x", pady=(12, 0))
@@ -68,7 +68,7 @@ class InstallWizard(ctk.CTk):
         self.continue_button = ctk.CTkButton(
             footer_frame,
             text="Begin setup",
-            command=self.handle_continue,
+            command=self._continue_clicked,
             height=42,
             font=("Segoe UI", 16, "bold"),
         )
@@ -82,22 +82,51 @@ class InstallWizard(ctk.CTk):
         )
         self.status_label.pack(side="left")
 
-    def show_current_step(self) -> None:
-        """Render the frame for the current step index."""
+    # ----- Public helpers for Controller -----
+    def set_status(self, text: str):
+        self.status_label.configure(text=text)
 
+    def set_continue_text(self, text: str):
+        self.continue_button.configure(text=text)
+
+    def set_chrome_button_enabled(self, enabled: bool):
+        if self._start_chrome_button is None:
+            return
+        self._start_chrome_button.configure(state="normal" if enabled else "disabled")
+
+    def fill_user_inputs(self, steam_link: str, webhook_url: str):
+        if self._steam_entry is not None:
+            self._steam_entry.delete(0, "end")
+            self._steam_entry.insert(0, steam_link or "")
+        if self._webhook_entry is not None:
+            self._webhook_entry.delete(0, "end")
+            self._webhook_entry.insert(0, webhook_url or "")
+
+    def get_user_inputs(self) -> tuple[str, str]:
+        steam = self._steam_entry.get().strip() if self._steam_entry else ""
+        hook = self._webhook_entry.get().strip() if self._webhook_entry else ""
+        return steam, hook
+
+    # ----- Steps -----
+    def render_step(self, index: int):
+        # clear
         for child in self.step_container.winfo_children():
             child.destroy()
 
-        if self.current_step == 0:
-            self.show_welcome_step()
-        elif self.current_step == 1:
-            self.show_chrome_step()
-        elif self.current_step == 2:
-            self.show_user_input_step()
+        if index == 0:
+            self._render_welcome()
+            self.set_continue_text("Begin setup")
+            self.set_status("Step 1 of 4 · Review the information above before continuing.")
+        elif index == 1:
+            self._render_chrome()
+            self.set_continue_text("Next step")
+            self.set_status("Step 2 of 4 · Setup Chrome browser for the bot.")
+        elif index == 2:
+            self._render_user_inputs()
+            self.set_continue_text("Next step")
+            self.set_status("Step 3 of 4 · Input the required information")
 
-    def show_welcome_step(self) -> None:
-        """Display the introductory information for the wizard."""
-
+    def _render_welcome(self):
         info_frame = ctk.CTkScrollableFrame(self.step_container, corner_radius=12, fg_color="transparent")
         info_frame.pack(expand=True, fill="both")
 
@@ -146,19 +175,12 @@ class InstallWizard(ctk.CTk):
                 text=body,
                 font=("Segoe UI", 14),
                 justify="left",
-                wraplength=self.WINDOW_WIDTH - 140,
+                wraplength=WINDOW_WIDTH - 140,
                 anchor="w",
             )
             body_label.pack(fill="x", padx=16, pady=(0, 16))
 
-        self.continue_button.configure(text="Begin setup", state="normal")
-        self.status_label.configure(
-            text="Step 1 of 4 · Review the information above before continuing."
-        )
-
-    def show_chrome_step(self) -> None:
-        """Display Chrome setup guidance and placeholder controls."""
-
+    def _render_chrome(self):
         chrome_frame = ctk.CTkFrame(self.step_container, corner_radius=12)
         chrome_frame.pack(expand=True, fill="both", padx=6, pady=6)
 
@@ -182,94 +204,21 @@ class InstallWizard(ctk.CTk):
             text=body_text,
             font=("Segoe UI", 15),
             justify="left",
-            wraplength=self.WINDOW_WIDTH - 140,
+            wraplength=WINDOW_WIDTH - 140,
         )
         body_label.pack(fill="x", padx=24)
 
-        chrome_button = ctk.CTkButton(
+        # Keep a ref so controller can enable/disable
+        self._start_chrome_button = ctk.CTkButton(
             chrome_frame,
             text="Launch Chrome",
             height=42,
             font=("Segoe UI", 16, "bold"),
-            command=self.handle_launch_chrome,
+            command=self._launch_chrome_clicked,
         )
-        chrome_button.pack(padx=24, pady=(32, 12), anchor="w")
+        self._start_chrome_button.pack(padx=24, pady=(32, 12), anchor="w")
 
-        self.continue_button.configure(text="Next step")
-        self.status_label.configure(
-            text="Step 2 of 4 · Setup Chrome browser for the bot."
-        )
-
-    def handle_continue(self) -> None:
-        """Advance the wizard to the next step."""
-
-        if self.current_step < 2:
-            self.current_step += 1
-            self.show_current_step()
-
-    # --- replace your handler with this ---
-    def handle_launch_chrome(self) -> None:
-        """Kick off the external Chrome setup (temp.py) without blocking the UI."""
-        # Resolve temp.py path relative to this file
-        here = os.path.dirname(os.path.abspath(__file__))
-        temp_script = os.path.join(here, "temp.py")
-
-        if not os.path.exists(temp_script):
-            messagebox.showerror(
-                "Missing file",
-                f"Could not find temp.py at:\n{temp_script}\n\nMake sure it exists next to install_ui.py.",
-            )
-            return
-
-        # Update UI before launch
-        self.status_label.configure(text="Step 2 of 4 · Launching Chrome setup…")
-        # If you have a dedicated button attribute, disable it while running:
-        try:
-            self.start_chrome_button.configure(state="disabled")
-        except Exception:
-            pass
-
-        # Launch temp.py in a separate process (non-blocking)
-        try:
-            proc = subprocess.Popen(
-                [sys.executable, "-u", temp_script],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.STDOUT,
-            )
-        except Exception as e:
-            messagebox.showerror("Failed to start Chrome setup", str(e))
-            try:
-                self.start_chrome_button.configure(state="normal")
-            except Exception:
-                pass
-            return
-
-        # Poll for completion without freezing the Tk loop
-        def _poll():
-            if proc.poll() is None:
-                # still running
-                self.after(500, _poll)
-            else:
-                # finished
-                try:
-                    self.start_chrome_button.configure(state="normal")
-                except Exception:
-                    pass
-                if proc.returncode == 0:
-                    self.status_label.configure(text="Chrome setup finished. You can continue.")
-                    # If you have a next step, trigger it here (optional):
-                    # self._advance_to_next_step()
-                else:
-                    self.status_label.configure(text="Chrome setup ended with an error. See logs if available.")
-                    messagebox.showwarning(
-                        "Chrome setup ended",
-                        "The Chrome setup process exited with a non-zero status.\n"
-                        "If this was intentional, you can continue. Otherwise, please rerun.",
-                    )
-
-        self.after(500, _poll)
-
-    def show_user_input_step(self) -> None:
+    def _render_user_inputs(self):
         user_input_frame = ctk.CTkFrame(self.step_container, corner_radius=12)
         user_input_frame.pack(expand=True, fill="both", padx=6, pady=6)
 
@@ -281,14 +230,12 @@ class InstallWizard(ctk.CTk):
         )
         user_input_heading.pack(fill="x", padx=20, pady=(16, 8))
 
-        # --- Steam & Discord input fields ---
         input_container = ctk.CTkFrame(user_input_frame, corner_radius=8)
         input_container.pack(fill="x", padx=20, pady=(0, 12))
 
         inner_frame = ctk.CTkFrame(input_container, fg_color="transparent")
         inner_frame.pack(fill="x", padx=16, pady=16)
 
-        # Steam Inventory Link
         steam_label = ctk.CTkLabel(
             inner_frame,
             text="Steam Inventory Link:",
@@ -297,15 +244,14 @@ class InstallWizard(ctk.CTk):
         )
         steam_label.pack(fill="x", pady=(0, 4))
 
-        steam_entry = ctk.CTkEntry(
+        self._steam_entry = ctk.CTkEntry(
             inner_frame,
             placeholder_text="https://steamcommunity.com/id/yourname/inventory",
             height=32,
             font=("Segoe UI", 13),
         )
-        steam_entry.pack(fill="x", pady=(0, 10))
+        self._steam_entry.pack(fill="x", pady=(0, 10))
 
-        # Discord Webhook URL
         webhook_label = ctk.CTkLabel(
             inner_frame,
             text="Discord Webhook URL:",
@@ -314,15 +260,14 @@ class InstallWizard(ctk.CTk):
         )
         webhook_label.pack(fill="x", pady=(0, 4))
 
-        webhook_entry = ctk.CTkEntry(
+        self._webhook_entry = ctk.CTkEntry(
             inner_frame,
             placeholder_text="https://discord.com/api/webhooks/...",
             height=32,
             font=("Segoe UI", 13),
         )
-        webhook_entry.pack(fill="x")
+        self._webhook_entry.pack(fill="x")
 
-        # --- Save Information Button ---
         button_frame = ctk.CTkFrame(user_input_frame, fg_color="transparent")
         button_frame.pack(fill="x", pady=(8, 16), padx=20)
 
@@ -333,46 +278,34 @@ class InstallWizard(ctk.CTk):
             height=36,
             font=("Segoe UI", 14, "bold"),
             corner_radius=6,
+            command=self._save_clicked,
         )
         save_button.pack(anchor="e")
 
-        def on_save():
-            steam_link = steam_entry.get().strip()
-            webhook_url = webhook_entry.get().strip()
+    # ----- UI -> Controller triggers -----
+    def _continue_clicked(self):
+        if self.on_continue:
+            self.on_continue()
 
-            # (Optional) very light validation
-            if not steam_link or not webhook_url or not steam_link.startswith("http") or not webhook_url.startswith(
-                    "http"):
-                self.status_label.configure(text="Please enter valid URLs for both fields.")
-                return
+    def _launch_chrome_clicked(self):
+        if self.on_launch_chrome:
+            self.on_launch_chrome()
 
-            # Disable the button to prevent multiple clicks
-            save_button.configure(state="disabled")
+    def _save_clicked(self):
+        if not self.on_save_info:
+            return
+        steam, hook = self.get_user_inputs()
 
-            # Write to config.json next to this file
-            try:
-                here = os.path.dirname(os.path.abspath(__file__))
-                cfg_path = os.path.join(here, "config.json")
+        # lightweight input check mirroring original behavior
+        if not steam or not hook or not steam.startswith("http") or not hook.startswith("http"):
+            self.set_status("Please enter valid URLs for both fields.")
+            return
 
-                data = {
-                    "steam_inventory_link": steam_link,
-                    "discord_webhook_url": webhook_url,
-                }
+        self.on_save_info(steam, hook)
 
-                # ensure ASCII-safe + pretty, but compact enough
-                with open(cfg_path, "w", encoding="utf-8") as f:
-                    json.dump(data, f, ensure_ascii=False, indent=2)
+    # ----- Minor helpers the controller can reuse -----
+    def show_error(self, title: str, message: str):
+        messagebox.showerror(title, message)
 
-                self.status_label.configure(text=f"Information saved to {os.path.basename(cfg_path)}.")
-            except Exception as e:
-                # Re-enable so the user can try again
-                save_button.configure(state="normal")
-                self.status_label.configure(text=f"Failed to save config: {e}")
-
-        save_button.configure(command=on_save)
-
-        self.status_label.configure(text="Step 3 of 4 · Input the required information")
-
-
-if __name__ == "__main__":
-    InstallWizard().mainloop()
+    def show_warning(self, title: str, message: str):
+        messagebox.showwarning(title, message)
