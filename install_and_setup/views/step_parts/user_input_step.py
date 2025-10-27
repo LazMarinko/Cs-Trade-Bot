@@ -65,4 +65,4 @@ def build_user_input(parent: ctk.CTkFrame, on_launch) -> ctk.CTkEntry:
     )
     save_button.pack(anchor="e")
 
-    return steam_entry, webhook_entry
+    return steam_entry, webhook_entry, save_button
