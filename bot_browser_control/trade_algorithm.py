@@ -38,7 +38,6 @@ class TradeAlgorithm:
             else:
                 print(f"🔍 Found {len(item_divs)} items inside the inventory.")
 
-
             suitable_items = []
             for index, item_div in enumerate(item_divs):
                 try:

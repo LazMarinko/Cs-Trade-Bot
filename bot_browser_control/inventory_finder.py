@@ -1,5 +1,6 @@
 from selenium.webdriver.common.by import By
 
+
 def inventory_finder(driver, inventory_number):
     raw_inventory_containers = driver.find_elements(
         By.CSS_SELECTOR, "div[id^='inventory_'][id*='_730_']"

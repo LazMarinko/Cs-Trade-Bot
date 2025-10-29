@@ -7,6 +7,7 @@ import time
 import random
 from bot_browser_control.trade_checker import TradeChecker  # Import TradeChecker
 
+
 class TradeBot:
     def __init__(self, item_number):
         """
@@ -15,7 +16,7 @@ class TradeBot:
         options = webdriver.ChromeOptions()
         options.add_argument(r"--user-data-dir=C:\Temp\NewProfile")
         options.add_argument(r"--profile-directory=Default")
-        #options.add_argument("--headless")
+        # options.add_argument("--headless")
         options.add_argument("--start-maximized")
 
         self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
@@ -63,7 +64,7 @@ class TradeBot:
                 time.sleep(4)
                 try:
                     trade_offer_button = self.driver.find_element(By.XPATH,
-                        '//*[@id="AppHubContent"]/div/div[1]/div[3]/div[1]/a')
+                                                                  '//*[@id="AppHubContent"]/div/div[1]/div[3]/div[1]/a')
                     trade_offer_button.click()
                     time.sleep(random.uniform(2, 4))
 

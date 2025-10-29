@@ -6,6 +6,7 @@ import time
 from PIL import Image
 from discord.webhook import DiscordWebhook
 
+
 class TradeConfirmer:
     def __init__(self, item_index, index_tuple, driver):
         self.driver = driver
@@ -23,13 +24,12 @@ class TradeConfirmer:
         # Load the image
         self.driver.save_screenshot('image.png')
 
-
         current_url = self.get_url()
 
         # Save the cropped imag
         webhook = DiscordWebhook(current_url)
         webhook.run()
-        #cropped_image.show()
+        # cropped_image.show()
 
     def trade_constuctor(self):
         try:
@@ -70,8 +70,5 @@ class TradeConfirmer:
         current_url = self.driver.current_url
         return current_url
 
-
     def run(self):
         self.trade_constuctor()
-
-

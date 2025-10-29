@@ -71,7 +71,6 @@ class TradeChecker:
                 print(f"❌ Selected item index {self.item_index} is out of range.")
                 return
 
-
             # **Find price indicator**
             try:
                 selected_item = unique_items[self.item_index - 1]
