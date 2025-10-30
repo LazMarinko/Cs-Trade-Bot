@@ -1,9 +1,9 @@
 import requests
-
+from config_reader.config_getter import get_value_from_config
 
 class DiscordWebhook:
     def __init__(self, current_url):
-        self.webhook_url = "https://discordapp.com/api/webhooks/1380885814363422922/OGm9-UDXdzEsDGG5Xlsp-iERbC5OQXgB2jGDrcoVAnCsLQgPOq2UPjbnOrvIhoZ5uRhJ"
+        self.webhook_url =get_value_from_config("discord_webhook_url")
         self.message = "Profitable trade found.\nUrl for trade:" + current_url
         self.image_path = "image.png"
         self.current_url = current_url

@@ -3,6 +3,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bot_browser_control.trade_confirmer import TradeConfirmer
 from bot_browser_control.inventory_finder import inventory_finder
+from config_reader.config_getter import get_value_from_config
 import time
 
 
@@ -13,6 +14,9 @@ class TradeAlgorithm:
         self.selected_item_price = float(selected_item_price.strip().replace('€', '').replace('$', ''))
         self.item_index = item_index
         new_combo_price = 0
+        self.min_profit = get_value_from_config('min_profit_multiplier')
+        self.max_profit = get_value_from_config('max_profit_multiplier')
+        self.min_value = get_value_from_config('min_target_item_ratio')
 
     def find_other_persons_items(self):
         """Find other persons inventory."""
@@ -60,7 +64,7 @@ class TradeAlgorithm:
                     price = float(price_text)
                     print(f"Current price: {price}")
 
-                    if self.selected_item_price * 0.5 < price < self.selected_item_price:
+                    if self.selected_item_price * self.min_value < price < self.selected_item_price:
                         suitable_items.append((index + 1, price))  # Use 1-based index
                         print(f"✅ Suitable item at index {index + 1} with price: {price}")
 
@@ -106,14 +110,14 @@ class TradeAlgorithm:
 
                         print(f"🧮 Trying combo {new_combo} with total {new_total:.2f}")
 
-                        if self.selected_item_price * 1.04 <= new_total <= self.selected_item_price * 1.07:
+                        if self.selected_item_price * self.min_profit <= new_total <= self.selected_item_price * self.max_profit:
                             print(f"✅ Profit combo found: {new_combo} = {new_total:.2f}")
                             trade_confirmer = TradeConfirmer(self.item_index, new_combo, self.driver)
                             trade_confirmer.run()
                             trade_found = True
                             return
 
-                        elif new_total < self.selected_item_price * 1.04:
+                        elif new_total < self.selected_item_price * self.min_profit:
                             try_combos(new_combo, new_total, depth + 1)
 
                         if trade_found:
@@ -135,3 +139,5 @@ class TradeAlgorithm:
         """Runs the trade algorithm."""
         print("🔍 Scanning inventory for tradeable items...")
         self.find_trade()
+
+

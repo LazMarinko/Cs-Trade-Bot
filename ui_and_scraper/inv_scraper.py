@@ -4,6 +4,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select
 from webdriver_manager.chrome import ChromeDriverManager
+from config_reader.config_getter import get_value_from_config
 import time
 
 def get_inventory_items():
@@ -16,7 +17,7 @@ def get_inventory_items():
     options.add_argument("--start-maximized")
     # Initialize driver
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver.get("https://steamcommunity.com/profiles/76561198264077039/inventory#730")
+    driver.get(get_value_from_config("steam_inventory_link"))
     time.sleep(5)
 
     # Locate the dropdown and select the 3rd option
