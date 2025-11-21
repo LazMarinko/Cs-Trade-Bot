@@ -23,7 +23,6 @@ def get_inventory_items():
     # Locate the dropdown and select the 3rd option
     dropdown = Select(driver.find_element("css selector", "#sortingMethod"))
     dropdown.select_by_index(2)
-    print("print select index")
     time.sleep(5)
     tradeable_item_list = []
 
@@ -33,7 +32,7 @@ def get_inventory_items():
 
         tradeable_count = 0
         index = 0
-
+        current_item_index = 0
         while tradeable_count < 10 and index < len(items):
             item = items[index]
             try:
@@ -46,8 +45,8 @@ def get_inventory_items():
                 retry_clicks = 3
                 while retries > 0:
                     try:
-                        item_name_element = driver.find_element(By.CSS_SELECTOR, "#iteminfo0_content > div.item_desc_description > a.hover_item_name.custom_name")
-                        item_name = item_name_element.text.strip()
+                        item_name_element = driver.find_element(By.CSS_SELECTOR, "#iteminfo0 h1 span")
+                        item_name = item_name_element.text
                         if item_name:
                             break
                     except Exception:
@@ -67,8 +66,11 @@ def get_inventory_items():
 
                 # Extract item wear
                 try:
-                    wear_element = driver.find_element(By.CSS_SELECTOR, "#iteminfo0_item_descriptors > div:nth-child(1)")
-                    wear_text = wear_element.text.strip()
+                    wear_element = driver.find_element(
+                        By.XPATH,
+                        "//*[@id='iteminfo0']//span[contains(., 'Exterior')]"
+                    )
+                    wear_text = wear_element.text  # e.g. "Exterior: Minimal Wear"
                     if wear_text.startswith("Exterior: "):
                         wear_mapping = {
                             "Factory New": "FN",
@@ -103,6 +105,8 @@ def get_inventory_items():
             except Exception as e:
                 index += 1
                 print(e)
+
+            current_item_index += 1
 
     except Exception as e:
         print(e)
