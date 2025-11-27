@@ -1,10 +1,9 @@
 # main.py
-from bot_browser_control.bot import TradeBot
-from ui_and_scraper.ui import ItemSelectorUi
 from ui_and_scraper.close_ui import CloseUI
 
 # ← use your existing config.py that already defines these
 from install_and_setup.config import CONFIG_JSON, CHROME_PROFILE_PATH
+from ui_and_scraper.selector_ui.selector_controller.item_selector_controller import ItemSelectorController
 
 from install_and_setup.controllers.install_controller import InstallController  # adjust import if different
 
@@ -17,6 +16,13 @@ import sys
 def files_ready() -> bool:
     """Both config file and Chrome profile folder must exist."""
     return os.path.isfile(CONFIG_JSON) and os.path.isdir(CHROME_PROFILE_PATH)
+
+
+def select_trade_item_index():
+    controller = ItemSelectorController()
+    selected_index = controller.run()
+    return selected_index + 1
+
 
 
 def run_install_ui() -> bool:
@@ -71,10 +77,7 @@ def main():
 
     # ---- Your original flow --------------------------------------------------
     try:
-        ui = ItemSelectorUi()
-        ui.mainloop()
-
-        selected_index = ui.selected_index + 1
+        selected_index = select_trade_item_index()
         print(f"Final selected item index: {selected_index}")
 
         time.sleep(2)
