@@ -1,10 +1,9 @@
 # main.py
-from ui_and_scraper.close_ui import CloseUI
 
 # ← use your existing config.py that already defines these
 from install_and_setup.config import CONFIG_JSON, CHROME_PROFILE_PATH
 from ui_and_scraper.selector_ui.selector_controller.item_selector_controller import ItemSelectorController
-
+from ui_and_scraper.close_ui.close_ui_controller.close_ui_controller import CloseController
 from install_and_setup.controllers.install_controller import InstallController  # adjust import if different
 
 import os
@@ -82,8 +81,8 @@ def main():
 
         time.sleep(2)
         if selected_index is not None:
-            close_ui = CloseUI(selected_index)
-            close_ui.mainloop()
+            close_controller = CloseController(selected_index)
+            close_controller.run()
     except Exception as e:
         print(e)
 
